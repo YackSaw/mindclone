@@ -55,7 +55,22 @@
         // div要素を追加
         var newLine = document.createElement("div");
         newLine.innerHTML = "[" + dateStr + "]" + msg;
-        messageBox.append(newLine);
+        messageBox.prepend(newLine);
+    });
+
+    socket.on("updateUsersList", (usersList)=>{
+        loggedinUsersList = document.getElementById("loggedinUsers");
+        oldList = loggedinUsersList.querySelector("ul");
+        newList = document.createElement("ul");
+
+        // div要素を追加
+        for(let user of usersList){
+            var newItem = document.createElement("li");
+            newItem.innerHTML = user.name;
+            newList.appendChild(newItem);
+        }
+
+        loggedinUsersList.replaceChild(newList, oldList);
     });
 
     function drawAllCards(cardsList, ascent=true){
@@ -71,7 +86,7 @@
 
         // 順に表示
         for(let i=cardsList.length-1;i>=0;i--){
-            cardsList[i].setPosition(i*60,0);
+            cardsList[i].setPosition(i*85,0);
             cardsList[i].draw();
         }
     }
@@ -94,12 +109,13 @@
     // 手札公開操作
     function onOpenCardButtonClick(){
         var lowestCard = cardListHand.shift();
-        socket.emit('openCard', lowestCard);
         socket.emit('sendMessage', userNameText + "さんが手札[" + lowestCard.text + "]を公開しました");
 
         ctx = document.getElementById("hand").getContext('2d');
         ctx.clearRect(0, 0, 1000, 1000);
         drawAllHandCards();
+
+        socket.emit('openCard', lowestCard);
     }
 
     function onNextRoundClick(){
@@ -136,7 +152,7 @@
         constructor(ctx, cardColor){
             this.ctx = ctx;
             this.width = 80;
-            this.height = 160;
+            this.height = 120;
             this.text = "0";
             this.x = 0;
             this.y = 0;
@@ -177,6 +193,10 @@
         }
     }
   </script>
+    <div>ログイン済みユーザ</div>
+    <div id="loggedinUsers">
+        <ul></ul>
+    </div>
     <form name="mainForm">
         <input type="text" name="userName"></input>
         <button type="button" name="btnLogin" onclick="onLoginButtonClick()">ログイン</button>
