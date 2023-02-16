@@ -37,12 +37,10 @@ var util = require("./util.js");
 
 
 // 定数
-const numberOfPlayers = 4;
-var loggedinPlayers = 0;
+const numberOfPlayers = 2;
 
 // ゲームロジック部
 var logic = require("./TheMindLogic.js");
-var waitPlayer = "0";
 
 var tmpRoomId;
 var users = new Array();
@@ -61,6 +59,22 @@ function initializeGame(){
 
 function registerUser(newUser){
     users.push(newUser);
+}
+
+function unregisterUser(userSocketId){
+    var id = -1;
+    for(let i=0;i<users.length;i++){
+        logger.debug("disconnected:" + userSocketId + "  user:" + users[i].socketId)
+        if(users[i].socketId == userSocketId){
+            logger.debug("unregister user:" + users[i].name);
+            id = i;
+            break;
+        }
+    }
+
+    if(id>=0){
+        users.splice(id, 1);
+    }
 }
 
 function distributeCard(users, numOfCards=1){
@@ -94,6 +108,8 @@ io.sockets.on('connection', function(socket){
     logger.debug("connection established!");
     socket.on('disconnect', function(){
         logger.debug("disconnect");
+        unregisterUser(socket.id);
+        io.to(tmpRoomId).emit("updateUsersList", users);
     });
 
     // カードを配布する
@@ -121,23 +137,21 @@ io.sockets.on('connection', function(socket){
         registerUser(usersMod.createNewUser(name, util.uuid(), socket.id));
 
         logger.debug("server:login called");
-        if(waitPlayer == "1"){
+        if(users.length == numberOfPlayers){
             socket.join(tmpRoomId);
 
-            waitPlayer = "0";
-            logger.debug("emit battle!");
-            socket.to(tmpRoomId).emit("battle");
-            
             // ゲームの初期化
             setupGame(roundNum);
             for(let user of users){
                 logger.info("user:[" + user.name + "] has " + user.handCards);
             }
         }else{
-            waitPlayer = "1";
             tmpRoomId = logic.createRoomId();
             socket.join(tmpRoomId);
         }
+
+        // ログインしたら通知
+        io.to(tmpRoomId).emit("updateUsersList", users);
     });
 
     socket.on("openCard", function(card){
@@ -155,7 +169,7 @@ io.sockets.on('connection', function(socket){
         logger.debug("opened:" + newCardNum + "-----minimum:" + minimumCard);
         if(newCardNum == minimumCard){
             // OK
-            logger.debug("OK");
+            logger.info("game succeeded!");
             if(distributedCardList.length==0){
                 // 配布されたカードの全てが場に出たらcompleted
                 io.to(tmpRoomId).emit("completed");
@@ -163,7 +177,7 @@ io.sockets.on('connection', function(socket){
             }
         }else{
             // NG
-            logger.debug("NG");
+            logger.info("game failed!");
             io.to(tmpRoomId).emit("failed");
             io.to(tmpRoomId).emit("recvMessage", "失敗！");
         }
@@ -182,7 +196,6 @@ io.sockets.on('connection', function(socket){
 
     socket.on("goNextRound", function(){
         io.to(tmpRoomId).emit("recvMessage", "次のラウンドを開始します");
-
         io.to(tmpRoomId).emit("goNextRound");
 
         // ユーザ手札のクリア
