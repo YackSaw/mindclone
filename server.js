@@ -65,7 +65,7 @@ io.sockets.on('connection', function(socket){
     socket.on('disconnect', function(){
         logger.debug("disconnect");
         usersMod.unregisterUser(socket.id);
-        io.to(tmpRoomId).emit("updateUsersList", usersMod.users);
+        io.to(tmpRoomId).emit("updateUsersList", usersMod.getUsers());
     });
 
     // カードを配布する
