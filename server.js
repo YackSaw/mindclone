@@ -1,18 +1,4 @@
-// log4js設定
-var log4js = require('log4js');
-log4js.configure({
-    appenders: {
-      logFile: { type: 'file', filename: 'error.log' },
-      out: { type: 'stdout'},
-    },
-    categories: {
-      //default: { appenders: [ 'logFile' ], level: 'error' }
-      default: { appenders: [ 'out' ], level: 'trace' },
-      errLog: { appenders: ['logFile'], level: 'error'}
-    }
-  });
-var logger = log4js.getLogger();
-logger.level = 'all';
+var logger = require('./logger.js').logger;
 
 // サーバ起動～listen
 logger.debug("requires");
@@ -31,7 +17,7 @@ var io = require("socket.io")(server , {
     }
 });
 
-var usersMod = require("./users.js");
+var usersMod = require("./usersModule.js");
 var util = require("./util.js");
 
 
@@ -43,7 +29,6 @@ const numberOfPlayers = 2;
 var logic = require("./TheMindLogic.js");
 
 var tmpRoomId;
-var users = new Array();
 var distributedCardList = new Array();
 var openedCardList = new Array();
 var cardPile = logic.createCardPile();
@@ -55,26 +40,6 @@ function initializeGame(){
     cardPile = logic.createCardPile();
     distributedCardList = new Array();
     openedCardList = new Array();
-}
-
-function registerUser(newUser){
-    users.push(newUser);
-}
-
-function unregisterUser(userSocketId){
-    var id = -1;
-    for(let i=0;i<users.length;i++){
-        logger.debug("disconnected:" + userSocketId + "  user:" + users[i].socketId)
-        if(users[i].socketId == userSocketId){
-            logger.debug("unregister user:" + users[i].name);
-            id = i;
-            break;
-        }
-    }
-
-    if(id>=0){
-        users.splice(id, 1);
-    }
 }
 
 function distributeCard(users, numOfCards=1){
@@ -94,22 +59,13 @@ function distributeCard(users, numOfCards=1){
     logger.debug(distributedCardList);
 }
 
-function findUserBySocketId(users, socketId){
-    for(let user of users){
-        if(user.socketId == socketId){
-            return user;
-        }
-    }
-    return null;
-}
-
 // 接続後ソケットに対する処理
 io.sockets.on('connection', function(socket){
     logger.debug("connection established!");
     socket.on('disconnect', function(){
         logger.debug("disconnect");
-        unregisterUser(socket.id);
-        io.to(tmpRoomId).emit("updateUsersList", users);
+        usersMod.unregisterUser(socket.id);
+        io.to(tmpRoomId).emit("updateUsersList", usersMod.users);
     });
 
     // カードを配布する
@@ -121,42 +77,49 @@ io.sockets.on('connection', function(socket){
         }
     };
 
-    setupGame = function(roundNum){
+    setupGame = function(){
         logger.info("setup round[" + roundNum + "]");
+        var users = usersMod.getUsers();
         // ゲームの初期化
         initializeGame();
         // カードの配布
         distributeCard(users, 2);
         notifyDistributeCard(users);
 
+        // ユーザの手札をロギング
+        for(let user of users){
+            logger.info("user:[" + user.name + "] has " + user.handCards);
+        }
+
+        io.to(tmpRoomId).emit("battle");
+
         roundNum++;
     };
 
     socket.on('login', function(name){
+        var users = usersMod.getUsers();
         // ログインするたびにユーザの生成
-        registerUser(usersMod.createNewUser(name, util.uuid(), socket.id));
+        usersMod.registerUser(usersMod.createNewUser(name, util.uuid(), socket.id));
 
         logger.debug("server:login called");
         if(users.length == numberOfPlayers){
             socket.join(tmpRoomId);
 
             // ゲームの初期化
-            setupGame(roundNum);
-            for(let user of users){
-                logger.info("user:[" + user.name + "] has " + user.handCards);
-            }
+            setupGame();
         }else{
             tmpRoomId = logic.createRoomId();
             socket.join(tmpRoomId);
         }
 
         // ログインしたら通知
+        socket.emit("loginCompleted");
         io.to(tmpRoomId).emit("updateUsersList", users);
     });
 
     socket.on("openCard", function(card){
         logger.debug("server: openCard called");
-        var user = findUserBySocketId(users, socket.id);
+        var user = usersMod.findUserBySocketId(socket.id);
         logger.info("user:[" + user.name + "] opened:" + user.openCard());
 
         // カードを山札に公開する
@@ -199,11 +162,9 @@ io.sockets.on('connection', function(socket){
         io.to(tmpRoomId).emit("goNextRound");
 
         // ユーザ手札のクリア
-        for(let user of users){
-            user.clearCards();
-        }
+        usersMod.clearUsersCards();
 
         // ゲームの初期化
-        setupGame(roundNum);
+        setupGame();
     });
 });
