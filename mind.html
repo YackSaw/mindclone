@@ -1,25 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
-<style>
-    .ui_button{
-        font-size: 2em;
-    }
-    .loggedin_user_area{
-        background-color: #dddddd;
-    }
-    .ui_hideable{
-        visibility: visible;
-    }
-    .ui_text{
-        font-size: 2em;
-    }
-    .ui_input_name{
-        font-size: 2em;
-        width: 15%;
-    }
-</style>
+<link rel="stylesheet" href="style.css" type="text/css">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Client</title>
   <!-- client apiを読み込む -->
   <script src="http://131.113.250.164:8080/socket.io/socket.io.js"></script>
@@ -35,9 +19,11 @@
     var cardListHand = new Array();
 
     window.onload = function(){
-        // 最初はカード配布・ネクストラウンドを隠しておく
+        // 最初はカード配布ボタン・ネクストラウンドを隠しておく
         var gameForm = document.getElementById("form_game");
         gameForm.style.visibility = 'hidden';
+        var roundForm = document.getElementById("form_round");
+        roundForm.style.visibility = 'hidden';
     };
     
     // 対戦開始イベント
@@ -45,8 +31,18 @@
         // 対戦開始時処理
         var gameForm = document.getElementById("form_game");
         gameForm.style.visibility = 'visible';
+        document.getElementById("btnOpenCard").disabled = false;
 
-        document.getElementById("btnNextRound").disabled = true;
+        var roundForm = document.getElementById("form_round");
+        roundForm.style.visibility = 'hidden';
+    });
+
+    function showNextRoundButton(){
+        var roundForm = document.getElementById("form_round");
+        roundForm.style.visibility = 'visible';
+    }
+    socket.on("showNextRoundButton", () => {
+        showNextRoundButton();
     });
 
     // 失敗時の処理
@@ -57,8 +53,10 @@
         ctx.fillStyle = 'rgb(255, 0, 0)';
         ctx.fillText("FAILED...", 50, 50);
 
-        // 次のラウンド
-        document.getElementById("btnNextRound").disabled = false;
+        // 次のラウンドを表示
+        showNextRoundButton();
+        // 手札公開ボタンの無効化
+        document.getElementById("btnOpenCard").disabled = true;
     });
 
     // 成功時の処理
@@ -70,7 +68,9 @@
         ctx.fillText("COMPLETED!", 50, 50);
 
         // 次のラウンド
-        document.getElementById("btnNextRound").disabled = false;
+        showNextRoundButton();
+        // 手札公開ボタンの無効化
+        document.getElementById("btnOpenCard").disabled = true;
     });
     
     // 手札の配布
@@ -127,8 +127,12 @@
 
         // 順に表示
         for(let i=cardsList.length-1;i>=0;i--){
+            var scale = 1;
             cardsList[i].setPosition(i*85,0);
-            cardsList[i].draw();
+            if(i!=0){
+                scale = 0.9;
+            }
+            cardsList[i].draw(scale);
         }
     }
 
@@ -162,6 +166,11 @@
         drawAllHandCards();
 
         socket.emit('openCard', lowestCard);
+
+        // もう配布カードがなければボタンは無効状態
+        if(cardListHand.length == 0){
+            document.getElementById("btnOpenCard").disabled = true;
+        }
     }
 
     function onNextRoundClick(){
@@ -193,7 +202,7 @@
     });
 
 
-    // ----------- 描画系 ------------------
+  // ----------- 描画系 ------------------
   </script>
     <div class="loggedin_user_area">
         ログイン済みユーザ
@@ -208,20 +217,23 @@
             <input type="text" name="userName" class="ui_input_name"></input>
             <button type="button" name="btnLogin" onclick="onLoginButtonClick()" class="ui_button">ログイン</button>
         </div>
-        <div id="form_game" class="ui_hideable">
-            <button type="button" id="btnOpenCard" onclick="onOpenCardButtonClick()" class="ui_button">カード公開</button>
-            <button type="button" id="btnNextRound" onclick="onNextRoundClick()" class="ui_button" disabled>次のラウンド</button>
+        <div id="form_round" class="ui_hideable">
+            <button type="button" id="btnNextRound" onclick="onNextRoundClick()" class="ui_button">ゲーム開始</button>
         </div>
+        <br>
     </form>
     
     <div>
         <div class="ui_text">手札</div>
-        <canvas id="hand" width="400px" height="200px">
+        <canvas id="hand" width="600px" height="200px">
         </canvas>
+        <div id="form_game" class="ui_hideable">
+            <button type="button" id="btnOpenCard" onclick="onOpenCardButtonClick()" class="ui_button">カード公開</button>
+        </div>
     </div>
     <div>
         <div class="ui_text">山札</div>
-        <canvas id="board" width="400px" height="200px">
+        <canvas id="board" width="600px" height="200px">
         </canvas>
     </div>
     <br/>

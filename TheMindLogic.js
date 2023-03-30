@@ -1,3 +1,10 @@
+var PRand = require('./PseudoRandom.js');
+var randomGen = new PRand.Random();
+
+exports.initializeRandomGenerator = function(){
+    randomGen = new PRand.Random();
+}
+
 exports.createRoomId = function(){
     return "ABCDEFG";
 }
@@ -15,6 +22,30 @@ exports.isAscent = function(cardNumList){
         }
     }
     return true;
+}
+
+
+const cardsByRound = {
+    0: 1,
+    1: 1,
+    2: 1,
+    3: 1,
+
+    4: 2,
+    5: 2,
+    6: 2,
+
+    7: 3,
+    8: 3,
+    9: 3,
+};
+exports.getCardCount = function(roundNum){
+    if(roundNum in cardsByRound){
+        return cardsByRound[roundNum];
+    }
+    else{
+        return 1;
+    }
 }
 
 class CardPile{
@@ -38,13 +69,13 @@ class RandomCardPile extends CardPile{
     }
     drawCard(){
         // ランダムに使用していないカードを見つけてドロー
-        var id = Math.floor(Math.random()*100);
+        var id = randomGen.nextInt(1, 100);
         while(true){
             if(this.cardPile[id].used == false){
                 this.cardPile[id].used = true;
                 break;
             }
-            id = Math.floor(Math.random()*100);
+            id = randomGen.nextInt(1, 100);
         }
         return this.cardPile[id].num;
     }

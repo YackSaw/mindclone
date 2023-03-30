@@ -26,16 +26,16 @@ class Card{
         this.text = text;
     }
 
-    draw(){
+    draw(scale=1){
         this.ctx.clearRect(this.x, this.y, this.width, this.height);
         this.ctx.beginPath();
         this.ctx.fillStyle = this.cardColor;
-        this.ctx.fillRect(this.x, this.y, this.width, this.height);
+        this.ctx.fillRect(this.x, this.y, this.width * scale, this.height * scale);
 
         this.ctx.beginPath();
         this.ctx.lineWidth = "5";
         this.ctx.strokeStyle = "black";
-        this.ctx.rect(this.x, this.y, this.width, this.height);
+        this.ctx.rect(this.x, this.y, this.width * scale, this.height * scale);
         this.ctx.stroke();
         this.ctx.font = "48px Serif";
         this.ctx.fillStyle = 'rgb(0, 0, 0)';

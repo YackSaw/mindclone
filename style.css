@@ -1,0 +1,20 @@
+@charset "utf-8";
+.ui_button{
+    font-size: 2em;
+    width: 300px;
+    height: 60px;
+    padding: 10px;
+}
+.loggedin_user_area{
+    background-color: #dddddd;
+}
+.ui_hideable{
+    visibility: visible;
+}
+.ui_text{
+    font-size: 2em;
+}
+.ui_input_name{
+    font-size: 2em;
+    width: 15%;
+}

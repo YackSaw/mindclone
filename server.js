@@ -29,9 +29,9 @@ const numberOfPlayers = 2;
 var logic = require("./TheMindLogic.js");
 
 var tmpRoomId;
-var distributedCardList = new Array();
-var openedCardList = new Array();
-var cardPile = logic.createCardPile();
+var distributedCardList;
+var openedCardList;
+var cardPile;
 var roundNum = 0;
 
 // ゲーム状態の初期化
@@ -41,6 +41,8 @@ function initializeGame(){
     distributedCardList = new Array();
     openedCardList = new Array();
 }
+
+initializeGame();
 
 function distributeCard(users, numOfCards=1){
     for(let user of users){
@@ -66,6 +68,11 @@ io.sockets.on('connection', function(socket){
         logger.debug("disconnect");
         usersMod.unregisterUser(socket.id);
         io.to(tmpRoomId).emit("updateUsersList", usersMod.getUsers());
+
+        if(usersMod.getUsers().length == 0){
+            initializeGame();
+            roundNum = 0;
+        }
     });
 
     // カードを配布する
@@ -83,7 +90,7 @@ io.sockets.on('connection', function(socket){
         // ゲームの初期化
         initializeGame();
         // カードの配布
-        distributeCard(users, 2);
+        distributeCard(users, logic.getCardCount(roundNum));
         notifyDistributeCard(users);
 
         // ユーザの手札をロギング
@@ -98,15 +105,15 @@ io.sockets.on('connection', function(socket){
 
     socket.on('login', function(name){
         var users = usersMod.getUsers();
-        // ログインするたびにユーザの生成
-        usersMod.registerUser(usersMod.createNewUser(name, util.uuid(), socket.id));
+        if(name != "admin"){
+            // ログインするたびにユーザの生成
+            usersMod.registerUser(usersMod.createNewUser(name, util.uuid(), socket.id));
+        }
 
         logger.debug("server:login called");
-        if(users.length == numberOfPlayers){
+        if(users.length > 1){
             socket.join(tmpRoomId);
-
-            // ゲームの初期化
-            setupGame();
+            io.to(tmpRoomId).emit("showNextRoundButton");
         }else{
             tmpRoomId = logic.createRoomId();
             socket.join(tmpRoomId);
@@ -132,8 +139,8 @@ io.sockets.on('connection', function(socket){
         logger.debug("opened:" + newCardNum + "-----minimum:" + minimumCard);
         if(newCardNum == minimumCard){
             // OK
-            logger.info("game succeeded!");
             if(distributedCardList.length==0){
+                logger.info("game completed!");
                 // 配布されたカードの全てが場に出たらcompleted
                 io.to(tmpRoomId).emit("completed");
                 io.to(tmpRoomId).emit("recvMessage", "成功！");
@@ -158,8 +165,12 @@ io.sockets.on('connection', function(socket){
     });
 
     socket.on("goNextRound", function(){
-        io.to(tmpRoomId).emit("recvMessage", "次のラウンドを開始します");
+        io.to(tmpRoomId).emit("recvMessage", "ラウンド[" + roundNum + "]を開始します");
         io.to(tmpRoomId).emit("goNextRound");
+
+        if(roundNum==0){
+            logic.initializeRandomGenerator();
+        }
 
         // ユーザ手札のクリア
         usersMod.clearUsersCards();
