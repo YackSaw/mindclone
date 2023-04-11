@@ -122,6 +122,9 @@ io.sockets.on('connection', function(socket){
         // ログインしたら通知
         socket.emit("loginCompleted");
         io.to(tmpRoomId).emit("updateUsersList", users);
+        if(name == "admin"){
+            socket.emit("showAdminUI");
+        }
     });
 
     socket.on("openCard", function(card){
@@ -177,5 +180,16 @@ io.sockets.on('connection', function(socket){
 
         // ゲームの初期化
         setupGame();
+    });
+
+    // 管理者用関数
+    socket.on("onChangeCardNumber", function(num){
+        logger.debug("server: onChangeCardNumber called");
+        io.to(tmpRoomId).emit("setCardCount", num);
+    });
+
+    socket.on("setCardCount", function(num){
+        logger.debug("server: setCardCount called");
+        logic.setCardCount(num);
     });
 });

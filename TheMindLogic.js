@@ -1,5 +1,6 @@
 var PRand = require('./PseudoRandom.js');
 var randomGen = new PRand.Random();
+var cardNumber = 1;
 
 exports.initializeRandomGenerator = function(){
     randomGen = new PRand.Random();
@@ -40,12 +41,17 @@ const cardsByRound = {
     9: 3,
 };
 exports.getCardCount = function(roundNum){
-    if(roundNum in cardsByRound){
-        return cardsByRound[roundNum];
-    }
-    else{
-        return 1;
-    }
+    // if(roundNum in cardsByRound){
+    //     return cardsByRound[roundNum];
+    // }
+    // else{
+    //     return 1;
+    // }
+    return cardNumber;
+}
+
+exports.setCardCount = function(num){
+    cardNumber = num;
 }
 
 class CardPile{

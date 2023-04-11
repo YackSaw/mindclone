@@ -18,12 +18,20 @@
     var userNameText = "";
     var cardListHand = new Array();
 
+    function onChangeNumCards(){
+        var select = document.getElementById("num_cards");
+        console.log(select.selectedIndex+1);
+        socket.emit("onChangeCardNumber", select.selectedIndex+1);
+    };
+
     window.onload = function(){
         // 最初はカード配布ボタン・ネクストラウンドを隠しておく
         var gameForm = document.getElementById("form_game");
         gameForm.style.visibility = 'hidden';
         var roundForm = document.getElementById("form_round");
         roundForm.style.visibility = 'hidden';
+        var adminForm = document.getElementById("form_card");
+        adminForm.style.visibility = 'hidden';
     };
     
     // 対戦開始イベント
@@ -97,6 +105,17 @@
         var newLine = document.createElement("div");
         newLine.innerHTML = "[" + dateStr + "]" + msg;
         messageBox.prepend(newLine);
+    });
+
+    // admin用UIを表示
+    socket.on("showAdminUI", ()=>{
+        console.log("admin login!!!");
+        var adminForm = document.getElementById("form_card");
+        adminForm.style.visibility = 'visible';
+    });
+
+    socket.on("setCardCount", (num)=>{
+        socket.emit("setCardCount", num);
     });
 
     socket.on("updateUsersList", (usersList)=>{
@@ -221,6 +240,17 @@
             <button type="button" id="btnNextRound" onclick="onNextRoundClick()" class="ui_button">ゲーム開始</button>
         </div>
         <br>
+    </form>
+    <form name="form_admin">
+        <div id="form_card" class="ui_hideable">
+            <select id="num_cards" name="num_cards" onchange="onChangeNumCards()" class="ui_button">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
     </form>
     
     <div>
