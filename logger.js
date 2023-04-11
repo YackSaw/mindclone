@@ -7,8 +7,8 @@ log4js.configure({
     },
     categories: {
       //default: { appenders: [ 'logFile' ], level: 'error' }
-      default: { appenders: [ 'out' ], level: 'trace' },
-      errLog: { appenders: ['logFile'], level: 'info'}
+      //default: { appenders: [ 'out' ], level: 'trace' },
+      default: { appenders: ['logFile'], level: 'info'}
     }
   });
 const logger = log4js.getLogger();
