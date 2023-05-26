@@ -37,7 +37,7 @@ class Card{
         this.ctx.strokeStyle = "black";
         this.ctx.rect(this.x, this.y, this.width * scale, this.height * scale);
         this.ctx.stroke();
-        this.ctx.font = "48px Serif";
+        this.ctx.font = "24px Serif";
         this.ctx.fillStyle = 'rgb(0, 0, 0)';
         this.ctx.fillText(this.text, this.x + this.width/2-24, this.y + this.height/2);
     }

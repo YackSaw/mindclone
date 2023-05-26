@@ -1,6 +1,7 @@
 var PRand = require('./PseudoRandom.js');
 var randomGen = new PRand.Random();
 var cardNumber = 1;
+const MAX_NUM = 100;
 
 exports.initializeRandomGenerator = function(){
     randomGen = new PRand.Random();
@@ -69,24 +70,58 @@ class CardPile{
 class RandomCardPile extends CardPile{
     constructor(){
         super();
-        for(let i=0;i<100;i++){
+        for(let i=0;i<MAX_NUM;i++){
             this.cardPile.push({"num": i+1, "used": false});
         }
     }
     drawCard(){
         // ランダムに使用していないカードを見つけてドロー
-        var id = randomGen.nextInt(1, 100);
+        var id = randomGen.nextInt(1, MAX_NUM);
         while(true){
             if(this.cardPile[id].used == false){
                 this.cardPile[id].used = true;
                 break;
             }
-            id = randomGen.nextInt(1, 100);
+            id = randomGen.nextInt(1, MAX_NUM);
         }
         return this.cardPile[id].num;
     }
 }
 
-exports.createCardPile = function(){
-    return new RandomCardPile();
+class RandomDevCardPile extends CardPile{
+    constructor(){
+        super();
+        for(let i=0;i<MAX_NUM;i++){
+            this.cardPile.push({"num": i+1, "used": false});
+        }
+    }
+
+    setDeviation(dev){
+        this.deviation = dev;
+        this.baseCardNum = randomGen.nextInt(this.deviation, MAX_NUM-this.deviation);
+    }
+
+    drawCard(){
+        // ランダムに使用していないカードを見つけてドロー
+        var id = randomGen.nextInt(this.baseCardNum-this.deviation, this.baseCardNum+this.deviation);
+        while(true){
+            if(this.cardPile[id].used == false){
+                this.cardPile[id].used = true;
+                break;
+            }
+            id = randomGen.nextInt(this.baseCardNum-this.deviation, this.baseCardNum+this.deviation);
+        }
+        return this.cardPile[id].num;
+    }
+}
+
+exports.createCardPile = function(roundNum){
+    //return new RandomCardPile();
+    var ret = new RandomDevCardPile();
+    var dev = parseInt((MAX_NUM*0.4)/Math.pow(2, roundNum));
+    if(dev<8){
+        dev=8;
+    }
+    ret.setDeviation(dev);
+    return ret;
 }
