@@ -2,9 +2,10 @@ var logger = require('./logger.js').logger;
 var users = new Array();
 
 class User{
-    constructor(name, uuid, socketId){
+    constructor(name, uuid, socketId, roomID){
         this.name = name;
         this.uuid = uuid;
+        this.roomID = roomID;
         this.socketId = socketId;
         this.handCards = new Array();
     }
@@ -25,9 +26,9 @@ class User{
     }
 }
 
-exports.createNewUser = function(name, uuid, socketId){
+exports.createNewUser = function(name, uuid, socketId, roomID){
     console.log("[" + name + "]" + socketId);
-    return new User(name, uuid, socketId);
+    return new User(name, uuid, socketId, roomID);
 }
 
 exports.registerUser = function(newUser){
@@ -50,12 +51,6 @@ exports.unregisterUser = function(userSocketId){
     }
 }
 
-exports.clearUsersCards = function(){
-    for(let user of users){
-        user.clearCards();
-    }
-}
-
 exports.findUserBySocketId = function(socketId){
     for(let user of users){
         if(user.socketId == socketId){
@@ -63,6 +58,24 @@ exports.findUserBySocketId = function(socketId){
         }
     }
     return null;
+}
+
+exports.getUsersInRoom = function(roomID){
+    var ret = Array();
+    for(let user of users){
+        //logger.debug("rID in list=" + user.roomID + ": rID "+roomID);
+        if(user.roomID == roomID){
+            ret.push(user);
+        }
+    }
+    return ret;
+}
+
+exports.clearUsersCards = function(roomID){
+    var usersInRoom = exports.getUsersInRoom(roomID);
+    for(let user of usersInRoom){
+        user.clearCards();
+    }
 }
 
 exports.getNumberOfUsers = function(){

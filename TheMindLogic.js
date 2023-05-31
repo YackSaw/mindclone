@@ -114,9 +114,9 @@ class RandomDevCardPile extends CardPile{
         return this.cardPile[id].num;
     }
 }
-
+/*
+// 2023/05/27実験で使用
 exports.createCardPile = function(roundNum){
-    //return new RandomCardPile();
     var ret = new RandomDevCardPile();
     var dev = parseInt((MAX_NUM*0.4)/Math.pow(2, roundNum));
     if(dev<8){
@@ -124,4 +124,10 @@ exports.createCardPile = function(roundNum){
     }
     ret.setDeviation(dev);
     return ret;
+}
+*/
+
+// 2023/04/14実験・および2023/05/27実験で使用
+exports.createCardPile = function(roundNum){
+    return new RandomCardPile();
 }
