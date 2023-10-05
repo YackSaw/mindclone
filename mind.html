@@ -32,6 +32,24 @@
         roundForm.style.visibility = 'hidden';
         var adminForm = document.getElementById("form_card");
         adminForm.style.visibility = 'hidden';
+
+        var params = (new URL(document.location)).searchParams;
+        var user = params.get('userName');
+        if(user!=null){
+            var form = document.forms.mainForm;
+            form.userName.value = user;
+            userNameText = form.userName.value;
+
+            if(userNameText.length == 0){
+                document.getElementById("validate_name").innerHTML = "名前を入力してください"; 
+            }else{
+                //console.log(form);
+                //console.log(form.userName.value);
+                var roomIDselect = document.getElementById("room_selection");
+                socket.emit('login',form.userName.value, roomIDselect.value);
+                socket.emit('sendMessage', form.userName.value + "さんがログインしました");
+            }
+        }
     };
     
     // 対戦開始イベント
@@ -170,8 +188,8 @@
         }else{
             //console.log(form);
             //console.log(form.userName.value);
-            //var roomIDselect = document.getElementById("room_selection");
-            socket.emit('login',form.userName.value, "room1");
+            var roomIDselect = document.getElementById("room_selection");
+            socket.emit('login',form.userName.value, roomIDselect.value);
             socket.emit('sendMessage', form.userName.value + "さんがログインしました");
         }
     }
@@ -241,7 +259,7 @@
         <div id="form_login" class="ui_hideable">
             <span class="ui_text">お名前</span>
             <input type="text" name="userName" class="ui_input_name"></input>
-            <!--
+            
                 <select id="room_selection" name="room_selection" onchange="onChangeRoomID()" class="ui_button">
                 <option value="room1" selected>room1</option>
                 <option value="room2">room2</option>
@@ -249,7 +267,7 @@
                 <option value="room4">room4</option>
                 <option value="room5">room5</option>
             </select>
-            -->
+            
             <button type="button" name="btnLogin" onclick="onLoginButtonClick()" class="ui_button">ログイン</button>
         </div>
         <div id="form_round" class="ui_hideable">
